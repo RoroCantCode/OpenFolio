@@ -1,5 +1,7 @@
-/** API base URL. Empty in dev uses Vite proxy (/api). Set in production to your backend origin. */
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ?? "";
+/** Render API in production; empty in dev uses Vite proxy (/api). */
+const API_BASE =
+  (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ??
+  (import.meta.env.PROD ? "https://openfolio-api.onrender.com" : "");
 
 function resolveUrl(input: RequestInfo | URL): RequestInfo | URL {
   if (typeof input !== "string") return input;

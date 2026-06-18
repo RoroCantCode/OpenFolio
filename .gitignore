@@ -13,8 +13,6 @@ backend/data/
 # Environment variables & secrets — NEVER commit these
 .env
 .env.*
-!.env.example
-!.env.*.template
 atlas-credentials.env
 backend/atlas-credentials.env
 *.credentials.env

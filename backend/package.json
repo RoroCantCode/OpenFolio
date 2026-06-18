@@ -7,16 +7,16 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "seed": "tsx src/seed.ts",
-    "import:history": "tsx src/importHistoricalTransactions.ts",
-    "migrate:mongo": "tsx migration_backups/migrate.ts",
-    "migrate:to-atlas": "tsx scripts/syncToAtlas.ts --push",
-    "backup:mongo": "tsx scripts/backupFromAtlas.ts",
-    "backup:from-atlas": "tsx scripts/backupFromAtlas.ts",
-    "backup:mirror-local": "tsx scripts/syncToAtlas.ts --pull",
-    "sync:atlas": "tsx scripts/syncToAtlas.ts --push",
-    "sync:atlas:pull": "tsx scripts/syncToAtlas.ts --pull",
-    "verify:atlas": "tsx scripts/verifyAtlasBackend.ts"
+    "seed": "node --import tsx src/seed.ts",
+    "import:history": "node --import tsx src/importHistoricalTransactions.ts",
+    "migrate:mongo": "node --import tsx migration_backups/migrate.ts",
+    "migrate:to-atlas": "node --import tsx scripts/syncToAtlas.ts --push",
+    "backup:mongo": "node --import tsx scripts/backupFromAtlas.ts",
+    "backup:from-atlas": "node --import tsx scripts/backupFromAtlas.ts",
+    "backup:mirror-local": "node --import tsx scripts/syncToAtlas.ts --pull",
+    "sync:atlas": "node --import tsx scripts/syncToAtlas.ts --push",
+    "sync:atlas:pull": "node --import tsx scripts/syncToAtlas.ts --pull",
+    "verify:atlas": "node --import tsx scripts/verifyAtlasBackend.ts"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -30,11 +30,9 @@
     "express-session": "^1.19.0",
     "mongodb": "^7.3.0",
     "nanoid": "^5.0.9",
+    "tsx": "^4.19.2",
     "typescript": "^5.7.2",
     "zod": "^3.24.1"
-  },
-  "devDependencies": {
-    "tsx": "^4.19.2"
   },
   "engines": {
     "node": ">=20"

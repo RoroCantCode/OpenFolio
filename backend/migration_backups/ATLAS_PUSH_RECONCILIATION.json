@@ -1,0 +1,30 @@
+{
+  "completedAt": "2026-06-18T17:31:19.907Z",
+  "direction": "push",
+  "dbName": "openfolio",
+  "sourceUri": "mongodb://localhost:27017",
+  "destUri": "mongodb+srv://rohancshekar_db_user:***@userdatacluster.lnjcpz5.mongodb.net",
+  "collections": {
+    "users": {
+      "source": 1,
+      "destAfter": 1,
+      "match": true
+    },
+    "transactions": {
+      "source": 24,
+      "destAfter": 24,
+      "match": true
+    },
+    "watchlist": {
+      "source": 4,
+      "destAfter": 4,
+      "match": true
+    },
+    "analytics_reports": {
+      "source": 0,
+      "destAfter": 0,
+      "match": true
+    }
+  },
+  "verified": true
+}
