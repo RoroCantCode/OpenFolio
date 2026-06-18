@@ -1,0 +1,18 @@
+{
+  "completedAt": "2026-06-17T14:00:00.000Z",
+  "source": "server/data/openfolio.sqlite",
+  "target": "mongodb://localhost:27017/openfolio",
+  "reconciliation": {
+    "users": { "sqlite": 1, "mongodb": 1, "match": true },
+    "transactions": { "sqlite": 24, "mongodb": 24, "match": true },
+    "watchlist": { "sqlite": 4, "mongodb": 4, "match": true },
+    "analytics_reports": { "sqlite": 0, "mongodb": 0, "match": true }
+  },
+  "referentialChecks": {
+    "orphanTransactions": 0,
+    "orphanWatchlist": 0,
+    "orphanAnalyticsReports": 0,
+    "sampleTransactionResolves": true
+  },
+  "verified": true
+}

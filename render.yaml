@@ -1,0 +1,25 @@
+# Render Blueprint — set Root Directory to `backend` if not using this file.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: openfolio-api
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SERVE_CLIENT
+        value: "false"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: CLIENT_ORIGINS
+        value: https://rorocantcode.github.io
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: OPENFOLIO_MONGO_URI
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false

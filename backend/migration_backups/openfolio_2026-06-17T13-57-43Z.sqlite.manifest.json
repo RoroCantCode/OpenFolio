@@ -1,0 +1,23 @@
+{
+  "createdAt": "2026-06-17T13:57:43.000Z",
+  "method": "sqlite3 VACUUM INTO (source opened read-only via file:...?mode=ro)",
+  "sourcePath": "server/data/openfolio.sqlite",
+  "backupPath": "migration_backups/openfolio_2026-06-17T13-57-43Z.sqlite",
+  "sizeBytes": 61440,
+  "sha256": "f7edd8dcdd314626561f52b78d69a93f4e6e368f78e1ca96f386409fe324b1dd",
+  "sourceCounts": {
+    "users": 1,
+    "transactions": 24,
+    "watchlist": 4,
+    "analytics_reports": 0,
+    "_openfolio_migrations": 1
+  },
+  "backupCounts": {
+    "users": 1,
+    "transactions": 24,
+    "watchlist": 4,
+    "analytics_reports": 0,
+    "_openfolio_migrations": 1
+  },
+  "verified": true
+}

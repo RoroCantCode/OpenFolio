@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+client/dist/
+backend/dist/
+
+# Local SQLite data (legacy)
+data/
+backend/data/
+
+# Environment variables & secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+!.env.*.template
+atlas-credentials.env
+backend/atlas-credentials.env
+*.credentials.env
+
+# MongoDB backups
+backend/migration_backups/mongo-dump-*/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
