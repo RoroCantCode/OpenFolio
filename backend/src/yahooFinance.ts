@@ -106,18 +106,22 @@ export type YahooChartJson = {
 export async function fetchYahooChart(symbolPath: string, query: string): Promise<YahooChartJson | null> {
   const sym = encodeURIComponent(normalizeYahooSymbol(symbolPath));
   const attempt = async (forceSession: boolean): Promise<YahooChartJson | null> => {
-    const { cookie, crumb } = await getYahooSession(forceSession);
-    const url = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?${query}&crumb=${encodeURIComponent(crumb)}`;
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent": BROWSER_UA,
-        Accept: "application/json",
-        Cookie: cookie,
-      },
-    });
-    if (res.status === 401 || res.status === 403) return null;
-    if (!res.ok) return null;
-    return (await res.json()) as YahooChartJson;
+    try {
+      const { cookie, crumb } = await getYahooSession(forceSession);
+      const url = `https://query2.finance.yahoo.com/v8/finance/chart/${sym}?${query}&crumb=${encodeURIComponent(crumb)}`;
+      const res = await fetch(url, {
+        headers: {
+          "User-Agent": BROWSER_UA,
+          Accept: "application/json",
+          Cookie: cookie,
+        },
+      });
+      if (res.status === 401 || res.status === 403) return null;
+      if (!res.ok) return null;
+      return (await res.json()) as YahooChartJson;
+    } catch {
+      return null;
+    }
   };
 
   let json = await attempt(false);

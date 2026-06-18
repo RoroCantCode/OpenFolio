@@ -62,13 +62,15 @@ function readBearerToken(req: Request): string | null {
   return token || null;
 }
 
-/** Resolve signed-in user from session cookie or Bearer token (GitHub Pages + Render). */
+/** Resolve signed-in user — Bearer token wins over session (cross-origin cookie can be stale). */
 export async function resolveLegacyUserId(req: Request, db: Db): Promise<string | null> {
-  if (req.session.userId) return req.session.userId;
   const token = readBearerToken(req);
-  if (!token) return null;
-  const doc = await findUserByApiToken(db, token);
-  return doc?.legacy_id ?? null;
+  if (token) {
+    const doc = await findUserByApiToken(db, token);
+    if (doc) return doc.legacy_id;
+  }
+  if (req.session.userId) return req.session.userId;
+  return null;
 }
 
 async function attachSessionAndToken(db: Db, req: Request, legacyId: string): Promise<string> {

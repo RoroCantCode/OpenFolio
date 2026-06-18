@@ -8,7 +8,7 @@ import {
 } from "recharts";
 import type { CapitalOverview, PortfolioResponse, Position, TransactionRow, WatchlistResponse } from "./api";
 import { fetchPortfolio, fetchTransactions, fetchWatchlist, postBulkDeleteTransactions } from "./api";
-import { setAuthToken } from "./http";
+import { setAuthToken, getAuthToken } from "./http";
 import { AdvancedAnalyticsPage } from "./components/AdvancedAnalyticsPage";
 import { BuyVsCurrentChart } from "./components/BuyVsCurrentChart";
 import { BrandMark } from "./components/BrandMark";
@@ -523,7 +523,7 @@ export default function App() {
 }
 
 function AppShell() {
-  const { user, authLoading, refresh, logout } = useAuth();
+  const { user, authLoading, authReady, refresh, logout } = useAuth();
   const [page, setPage] = useState<PageId>("home");
   const [data, setData] = useState<PortfolioResponse | null>(null);
   const [tx, setTx] = useState<TransactionRow[] | null>(null);
@@ -545,16 +545,30 @@ function AppShell() {
       const msg = e instanceof Error ? e.message : "Load failed";
       if (msg === "UNAUTHORIZED") {
         setAuthToken(null);
-        await logout();
-        setData(null);
-        setTx(null);
-        setWatchlistData(null);
-        setError("Your session expired. Please sign in again.");
-        return;
+        await refresh();
+        if (!getAuthToken()) {
+          await logout();
+          setData(null);
+          setTx(null);
+          setWatchlistData(null);
+          setError("Your session expired. Please sign in again.");
+          return;
+        }
+        try {
+          const [p, t, w] = await Promise.all([fetchPortfolio(), fetchTransactions(), fetchWatchlist()]);
+          setData(p);
+          setTx(t);
+          setWatchlistData(w);
+          return;
+        } catch (retryErr) {
+          const retryMsg = retryErr instanceof Error ? retryErr.message : "Load failed";
+          setError(retryMsg);
+          return;
+        }
       }
       setError(msg);
     }
-  }, [logout]);
+  }, [logout, refresh]);
 
   const loadWatchlistOnly = useCallback(async () => {
     if (!user || user.needsDisplayName) return;
@@ -566,7 +580,7 @@ function AppShell() {
   }, [user]);
 
   useEffect(() => {
-    if (authLoading) return;
+    if (authLoading || !authReady) return;
     if (!user || user.needsDisplayName) {
       setData(null);
       setTx(null);
@@ -575,7 +589,7 @@ function AppShell() {
       return;
     }
     void load();
-  }, [authLoading, user, load]);
+  }, [authLoading, authReady, user, load]);
 
   useEffect(() => {
     const positions = data?.positions;

@@ -23,6 +23,7 @@ import { setAuthToken } from "./http";
 type AuthContextValue = {
   user: AuthUser | null;
   authLoading: boolean;
+  authReady: boolean;
   refresh: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, displayName?: string) => Promise<void>;
@@ -38,11 +39,17 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   const refresh = useCallback(async () => {
-    const { user: u } = await fetchAuthMe();
-    if (!u) setAuthToken(null);
-    setUser(u);
+    setAuthReady(false);
+    try {
+      const { user: u } = await fetchAuthMe();
+      if (!u) setAuthToken(null);
+      setUser(u);
+    } finally {
+      setAuthReady(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -111,6 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       authLoading,
+      authReady,
       refresh,
       login,
       register,
@@ -120,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateProfile,
       updateTheme,
     }),
-    [user, authLoading, refresh, login, register, logout, updateDisplayName, updateProfile, updateTheme]
+    [user, authLoading, authReady, refresh, login, register, logout, updateDisplayName, updateProfile, updateTheme]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
