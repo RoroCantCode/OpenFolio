@@ -5,21 +5,7 @@
  * provides the same daily series used by many retail finance widgets.
  */
 
-const UA = {
-  "User-Agent": "OpenFolio/1.0 (portfolio tracker)",
-  Accept: "application/json",
-} as const;
-
-type YahooChartFull = {
-  chart?: {
-    error?: { description?: string };
-    result?: {
-      meta?: { symbol?: string; currency?: string };
-      timestamp?: number[];
-      indicators?: { quote?: { close?: (number | null)[] }[] };
-    }[];
-  };
-};
+import { fetchYahooChart, normalizeYahooSymbol, readDailyCloses } from "./yahooFinance.js";
 
 function utcEndOfCalendarDayMs(y: number, m: number, d: number): number {
   return Date.UTC(y, m - 1, d, 23, 59, 59, 999);
@@ -49,31 +35,25 @@ export function validateTradeCalendarDate(ymd: string): { ok: true; ymd: string 
   return { ok: true, ymd: `${p.y.toString().padStart(4, "0")}-${p.m.toString().padStart(2, "0")}-${p.d.toString().padStart(2, "0")}` };
 }
 
-function yahooSymbolForTicker(ticker: string): string {
-  const t = ticker.trim().toUpperCase().replace(/\./g, "-");
-  return encodeURIComponent(t);
-}
-
 async function fetchYahooDailyCloses(
   symbol: string,
   period1Sec: number,
   period2Sec: number
 ): Promise<{ t: number[]; c: (number | null)[] } | { error: string }> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?period1=${period1Sec}&period2=${period2Sec}&interval=1d`;
-  const res = await fetch(url, { headers: UA });
-  if (!res.ok) {
-    return { error: `Market data request failed (${res.status}).` };
+  const json = await fetchYahooChart(
+    symbol,
+    `period1=${period1Sec}&period2=${period2Sec}&interval=1d`
+  );
+  if (!json) {
+    return { error: "Market data request failed." };
   }
-  const json = (await res.json()) as YahooChartFull;
   const err = json.chart?.error?.description;
   if (err) return { error: err };
-  const r = json.chart?.result?.[0];
-  const t = r?.timestamp;
-  const closeArr = r?.indicators?.quote?.[0]?.close;
-  if (!Array.isArray(t) || !Array.isArray(closeArr) || t.length === 0) {
+  const series = readDailyCloses(json);
+  if (!series) {
     return { error: "No historical series returned for this symbol." };
   }
-  return { t, c: closeArr };
+  return series;
 }
 
 /** Last daily close on or before end of selected UTC calendar day (inclusive). */
@@ -105,7 +85,7 @@ export async function lookupUsdSgdOnTradeDate(ymd: string): Promise<
   const period2 = Math.floor(endUtcMs / 1000) + 86400;
   const period1 = period2 - 86400 * 400;
 
-  const sym = yahooSymbolForTicker("USDSGD=X");
+  const sym = normalizeYahooSymbol("USDSGD=X");
   const raw = await fetchYahooDailyCloses(sym, period1, period2);
   if ("error" in raw) return { ok: false, message: raw.error };
 
@@ -133,7 +113,7 @@ export async function lookupEquityCloseOnTradeDate(
   const period2 = Math.floor(endUtcMs / 1000) + 86400;
   const period1 = period2 - 86400 * 400;
 
-  const sym = yahooSymbolForTicker(t);
+  const sym = normalizeYahooSymbol(t);
   const raw = await fetchYahooDailyCloses(sym, period1, period2);
   if ("error" in raw) {
     return {
