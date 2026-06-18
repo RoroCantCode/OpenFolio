@@ -33,7 +33,7 @@ jobs:
         working-directory: client
         run: npm run build
         env:
-          VITE_API_URL: https://openfolio-api.onrender.com
+          VITE_API_URL: https://openfolio-ehjc.onrender.com
 
       - name: Deploy dist to gh-pages branch
         uses: peaceiris/actions-gh-pages@v4
