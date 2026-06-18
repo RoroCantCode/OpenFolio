@@ -46,8 +46,12 @@ export function loadServerEnv(): void {
   for (const file of ENV_FILES) {
     applyEnvFile(file);
   }
-  if (process.env.MONGODB_URI && !process.env.OPENFOLIO_MONGO_URI) {
-    process.env.OPENFOLIO_MONGO_URI = process.env.MONGODB_URI;
+  const mongoUri =
+    process.env.OPENFOLIO_MONGO_URI ??
+    process.env.MONGODB_URI ??
+    process.env.MONGO_URI;
+  if (mongoUri && !process.env.OPENFOLIO_MONGO_URI) {
+    process.env.OPENFOLIO_MONGO_URI = mongoUri;
   }
 }
 

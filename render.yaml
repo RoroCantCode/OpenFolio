@@ -5,7 +5,8 @@ services:
     name: openfolio-api
     runtime: node
     rootDir: backend
-    buildCommand: npm install && npm run build
+    # NODE_ENV=production skips devDependencies; TypeScript + @types/* are required to build.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
     envVars:
