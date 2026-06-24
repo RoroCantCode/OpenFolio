@@ -3,7 +3,7 @@ import type { PriceChartRange, WatchlistItem } from "../api";
 import { fetchPriceChart } from "../api";
 import { useCurrency } from "../CurrencyContext";
 import { fmtPct, fmtUsd } from "../format";
-import { PriceSparkline } from "./PriceSparkline";
+import { PriceChartPanel } from "./PriceChartPanel";
 
 const RANGES: PriceChartRange[] = ["1w", "1mo", "6mo", "ytd"];
 
@@ -16,8 +16,13 @@ const RANGE_LABELS: Record<PriceChartRange, string> = {
 
 type ChartState = {
   closes: number[];
+  timestamps: number[];
   changePct: number | null;
 };
+
+function isValidChart(chart: ChartState | undefined): chart is ChartState {
+  return Boolean(chart && chart.closes.length >= 2);
+}
 
 export function WatchlistDetailModal({
   item,
@@ -28,38 +33,45 @@ export function WatchlistDetailModal({
 }) {
   const { currency, fmtPortfolioMoney, liveFx } = useCurrency();
   const [range, setRange] = useState<PriceChartRange>("1mo");
-  const [chart, setChart] = useState<ChartState>({
-    closes: item.chartCloses,
-    changePct: item.changePct,
-  });
-  const [chartLoading, setChartLoading] = useState(false);
+  const [chart, setChart] = useState<ChartState>({ closes: [], timestamps: [], changePct: null });
+  const [displayName, setDisplayName] = useState<string | null>(item.name);
+  const [chartLoading, setChartLoading] = useState(true);
   const [chartErr, setChartErr] = useState<string | null>(null);
-  const chartCacheRef = useRef<Partial<Record<PriceChartRange, ChartState>>>({
-    "1mo": { closes: item.chartCloses, changePct: item.changePct },
-  });
+  const chartCacheRef = useRef<Partial<Record<PriceChartRange, ChartState>>>({});
 
   const loadChart = useCallback(
     async (nextRange: PriceChartRange) => {
       const cached = chartCacheRef.current[nextRange];
-      if (cached) {
+      if (isValidChart(cached)) {
         setChart(cached);
         setChartErr(null);
+        setChartLoading(false);
         return;
       }
+
       setChartLoading(true);
       setChartErr(null);
       try {
         const data = await fetchPriceChart(item.ticker, nextRange);
-        const next = { closes: data.closes, changePct: data.changePct };
+        if (data.name) setDisplayName(data.name);
+        if (data.closes.length < 2) {
+          throw new Error(`No ${RANGE_LABELS[nextRange].toLowerCase()} price data returned for this symbol.`);
+        }
+        const next = {
+          closes: data.closes,
+          timestamps: data.timestamps,
+          changePct: data.changePct,
+        };
         chartCacheRef.current[nextRange] = next;
         setChart(next);
       } catch (e) {
+        setChart({ closes: [], timestamps: [], changePct: null });
         setChartErr(e instanceof Error ? e.message : "Could not load chart.");
       } finally {
         setChartLoading(false);
       }
     },
-    [item.ticker, item.chartCloses, item.changePct]
+    [item.ticker]
   );
 
   useEffect(() => {
@@ -99,18 +111,18 @@ export function WatchlistDetailModal({
     >
       <div
         style={{
-          width: "min(640px, 100%)",
+          width: "min(820px, 100%)",
           background: "var(--bg1)",
           border: "1px solid var(--stroke)",
           borderRadius: 18,
-          padding: "1.15rem 1.35rem",
+          padding: "1.25rem 1.5rem",
           boxShadow: "var(--shadow)",
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div style={{ minWidth: 0 }}>
             <div id="watchlist-detail-title" style={{ fontSize: 20, fontWeight: 700, lineHeight: 1.25 }}>
-              {item.name ?? item.ticker}
+              {displayName ?? item.ticker}
             </div>
             <div className="mono" style={{ color: "var(--muted)", fontSize: 14, marginTop: 4 }}>
               {item.ticker}
@@ -173,7 +185,7 @@ export function WatchlistDetailModal({
             </span>
           </div>
 
-          <div style={{ width: "100%", height: 88, position: "relative", overflow: "hidden" }}>
+          <div style={{ width: "100%", height: 148, position: "relative" }}>
             {chartLoading && (
               <div
                 style={{
@@ -190,7 +202,16 @@ export function WatchlistDetailModal({
                 Loading…
               </div>
             )}
-            <PriceSparkline values={chart.closes} changePct={chart.changePct} width={600} height={88} />
+            {!chartLoading && !chartErr && (
+              <PriceChartPanel
+                closes={chart.closes}
+                timestamps={chart.timestamps}
+                changePct={chart.changePct}
+                width={760}
+                height={148}
+                style={{ width: "100%", height: 148 }}
+              />
+            )}
           </div>
           {chartErr && (
             <p style={{ margin: "8px 0 0", color: "var(--danger)", fontSize: 12 }}>{chartErr}</p>

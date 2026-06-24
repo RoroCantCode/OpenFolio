@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type CSSProperties } from "react";
 
 function sparkPath(values: number[], width: number, height: number): string {
   if (values.length < 2) return "";
@@ -23,12 +23,14 @@ export function PriceSparkline({
   width = 56,
   height = 26,
   className,
+  style,
 }: {
   values: number[];
   changePct: number | null;
   width?: number;
   height?: number;
   className?: string;
+  style?: CSSProperties;
 }) {
   const path = useMemo(() => sparkPath(values, width, height), [values, width, height]);
   const up = changePct != null && changePct > 0;
@@ -50,7 +52,7 @@ export function PriceSparkline({
       viewBox={`0 0 ${width} ${height}`}
       className={className}
       aria-hidden
-      style={{ display: "block", maxWidth: "100%" }}
+      style={{ display: "block", maxWidth: "100%", ...style }}
     >
       <path d={path} fill="none" stroke={stroke} strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
     </svg>

@@ -1,10 +1,15 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { WatchlistItem, WatchlistResponse } from "../api";
-import { putWatchlist } from "../api";
+import { fetchPriceChart, putWatchlist } from "../api";
 import { useCurrency } from "../CurrencyContext";
 import { fmtPct, fmtUsd } from "../format";
 import { WatchlistDetailModal } from "./WatchlistDetailModal";
 import { PriceSparkline } from "./PriceSparkline";
+
+type RowChart = {
+  changePct: number | null;
+  closes: number[];
+};
 
 export function WatchlistPanel({
   data,
@@ -20,9 +25,42 @@ export function WatchlistPanel({
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [detailItem, setDetailItem] = useState<WatchlistItem | null>(null);
+  const [rowCharts, setRowCharts] = useState<Record<string, RowChart>>({});
 
   const items = data?.items ?? [];
   const max = data?.max ?? 4;
+
+  useEffect(() => {
+    let cancelled = false;
+    const tickersKey = items.map((i) => i.ticker).join(",");
+    if (!tickersKey) {
+      setRowCharts({});
+      return;
+    }
+
+    void (async () => {
+      const next: Record<string, RowChart> = {};
+      for (const item of items) {
+        if (readOnly && item.chartCloses.length >= 2) {
+          next[item.ticker] = { changePct: item.changePct, closes: item.chartCloses };
+          continue;
+        }
+        try {
+          const chart = await fetchPriceChart(item.ticker, "1mo");
+          if (chart.closes.length >= 2) {
+            next[item.ticker] = { changePct: chart.changePct, closes: chart.closes };
+          }
+        } catch {
+          /* preview optional */
+        }
+      }
+      if (!cancelled) setRowCharts(next);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, readOnly]);
 
   const saveTickers = useCallback(
     async (next: string[]) => {
@@ -120,22 +158,27 @@ export function WatchlistPanel({
           <div style={{ color: "var(--muted)", fontSize: 14 }}>No symbols yet. Add up to {max} tickers.</div>
         )}
         {items.map((w) => {
-          const ch = w.changePct;
+          const preview = rowCharts[w.ticker];
+          const ch = preview?.changePct ?? w.changePct;
+          const closes = preview?.closes ?? w.chartCloses;
           const up = ch != null && ch > 0;
           const down = ch != null && ch < 0;
           const arrow = ch == null ? "—" : up ? "▲" : down ? "▼" : "→";
           const tone = up ? "var(--ok)" : down ? "var(--danger)" : "var(--muted)";
+          const detailRow: WatchlistItem = preview
+            ? { ...w, changePct: preview.changePct, chartCloses: preview.closes, name: w.name }
+            : w;
           return (
             <div
               key={w.ticker}
               className="watch-row"
               role="button"
               tabIndex={0}
-              onClick={() => setDetailItem(w)}
+              onClick={() => setDetailItem(detailRow)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
-                  setDetailItem(w);
+                  setDetailItem(detailRow);
                 }
               }}
               style={{
@@ -167,7 +210,7 @@ export function WatchlistPanel({
                   {fmtPrice(w.priceUsd)}
                 </div>
               </div>
-              <PriceSparkline values={w.chartCloses} changePct={w.changePct} width={52} height={24} />
+              <PriceSparkline values={closes} changePct={ch} width={52} height={24} />
               {!readOnly && (
                 <button
                   type="button"

@@ -98,6 +98,7 @@ export type PriceChartResponse = {
   name: string | null;
   changePct: number | null;
   closes: number[];
+  timestamps: number[];
 };
 
 export type WatchlistResponse = {

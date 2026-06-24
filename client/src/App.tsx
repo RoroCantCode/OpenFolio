@@ -583,7 +583,6 @@ function AppShell() {
       if (gen !== loadGenerationRef.current) return;
       setData(p);
       setTx(t);
-      setWatchlistData(await fetchWatchlist());
     } catch (e) {
       if (gen !== loadGenerationRef.current) return;
       const msg = e instanceof Error ? e.message : "Load failed";
@@ -611,16 +610,25 @@ function AppShell() {
           if (gen !== loadGenerationRef.current) return;
           setData(p);
           setTx(t);
-          setWatchlistData(await fetchWatchlist());
-          return;
         } catch (retryErr) {
           if (gen !== loadGenerationRef.current) return;
           const retryMsg = retryErr instanceof Error ? retryErr.message : "Load failed";
           setError(retryMsg);
           return;
         }
+      } else {
+        setError(msg);
+        return;
       }
-      setError(msg);
+    }
+
+    try {
+      if (gen !== loadGenerationRef.current) return;
+      setWatchlistData(await fetchWatchlist());
+    } catch (watchErr) {
+      if (gen !== loadGenerationRef.current) return;
+      console.warn("Watchlist load failed:", watchErr);
+      setWatchlistData({ items: [], max: 4 });
     }
   }, [user, logout, refresh, applyDemoState]);
 

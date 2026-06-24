@@ -460,6 +460,7 @@ app.get("/api/market/price-chart", async (req, res) => {
       name: chart.name,
       changePct: chart.changePct,
       closes: chart.closes,
+      timestamps: chart.timestamps,
     });
   } catch (e) {
     console.error(e);

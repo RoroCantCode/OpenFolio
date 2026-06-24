@@ -1,8 +1,8 @@
 import type { Db } from "mongodb";
 import { fetchPrices } from "./prices.js";
-import { fetchWatchlistPreviewChart } from "./priceChart.js";
 import { listWatchlistTickers } from "./mongo/watchlist.js";
 
+/** Watchlist prices only — chart series are loaded client-side via /api/market/price-chart. */
 export async function loadWatchlistPayload(
   db: Db,
   userId: string,
@@ -20,25 +20,16 @@ export async function loadWatchlistPayload(
   const tickers = await listWatchlistTickers(db, userId);
   const prices = priceMap ?? (await fetchPrices(tickers));
 
-  const items: {
-    ticker: string;
-    name: string | null;
-    priceUsd: number | null;
-    changePct: number | null;
-    chartCloses: number[];
-  }[] = [];
-
-  for (const ticker of tickers) {
+  const items = tickers.map((ticker) => {
     const upper = ticker.trim().toUpperCase();
-    const chart = await fetchWatchlistPreviewChart(ticker);
-    items.push({
+    return {
       ticker: upper,
-      name: chart.name,
+      name: null,
       priceUsd: prices[upper] ?? null,
-      changePct: chart.changePct,
-      chartCloses: chart.closes,
-    });
-  }
+      changePct: null,
+      chartCloses: [] as number[],
+    };
+  });
 
   return { items, max: 4 };
 }
