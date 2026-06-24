@@ -499,6 +499,32 @@ export default function App() {
 
 const SESSION_EXPIRED_MSG = "Your session expired. Please sign in again.";
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function portfolioMissingLivePrices(p: PortfolioResponse): boolean {
+  const open = p.positions.filter((pos) => pos.shares > 0);
+  if (open.length === 0) return false;
+  return open.every((pos) => {
+    const key = pos.ticker.trim().toUpperCase();
+    return p.prices[key] == null && pos.marketPriceUsd == null;
+  });
+}
+
+async function fetchPortfolioResilient(): Promise<PortfolioResponse> {
+  let portfolio = await fetchPortfolio();
+  if (!portfolioMissingLivePrices(portfolio)) return portfolio;
+  await sleep(900);
+  try {
+    const retry = await fetchPortfolio();
+    if (!portfolioMissingLivePrices(retry)) return retry;
+  } catch {
+    /* keep first response */
+  }
+  return portfolio;
+}
+
 function AppShell() {
   const { user, authLoading, authReady, sessionBusy, sessionAction, refresh, logout } = useAuth();
   const [page, setPage] = useState<PageId>("home");
@@ -555,7 +581,7 @@ function AppShell() {
     setLoadedUserId(null);
     setError(null);
     try {
-      const [p, t] = await Promise.all([fetchPortfolio(), fetchTransactions()]);
+      const [p, t] = await Promise.all([fetchPortfolioResilient(), fetchTransactions()]);
       if (gen !== loadGenerationRef.current) return;
       setData(p);
       setTx(t);
@@ -583,7 +609,7 @@ function AppShell() {
         await refresh();
         if (gen !== loadGenerationRef.current) return;
         try {
-          const [p, t] = await Promise.all([fetchPortfolio(), fetchTransactions()]);
+          const [p, t] = await Promise.all([fetchPortfolioResilient(), fetchTransactions()]);
           if (gen !== loadGenerationRef.current) return;
           setData(p);
           setTx(t);
@@ -635,8 +661,9 @@ function AppShell() {
   }, [user, loadWatchlistMomentumOnly]);
 
   useEffect(() => {
-    if (authLoading || !authReady) return;
+    if (authLoading || !authReady || sessionBusy) return;
     const userId = user?.id ?? null;
+    const needsDisplayName = Boolean(user?.needsDisplayName);
     if (!user) {
       if (prevUserIdRef.current) signedOutAtRef.current = Date.now();
       prevUserIdRef.current = null;
@@ -647,7 +674,7 @@ function AppShell() {
       applyDemoState();
       return;
     }
-    if (user.needsDisplayName) {
+    if (needsDisplayName) {
       if (prevUserIdRef.current !== userId) {
         prevUserIdRef.current = userId;
         loadGenerationRef.current += 1;
@@ -662,7 +689,6 @@ function AppShell() {
     }
     if (prevUserIdRef.current !== userId) {
       prevUserIdRef.current = userId;
-      loadGenerationRef.current += 1;
       setData(null);
       setTx(null);
       setWatchlistData(null);
@@ -671,10 +697,20 @@ function AppShell() {
       void load();
       return;
     }
-    if (!user.needsDisplayName && loadedUserId !== userId && !portfolioLoading) {
+    if (loadedUserId !== userId && !portfolioLoading) {
       void load();
     }
-  }, [authLoading, authReady, user, loadedUserId, portfolioLoading, load, applyDemoState]);
+  }, [
+    authLoading,
+    authReady,
+    sessionBusy,
+    user?.id,
+    user?.needsDisplayName,
+    loadedUserId,
+    portfolioLoading,
+    load,
+    applyDemoState,
+  ]);
 
   useEffect(() => {
     const positions = data?.positions;

@@ -1,8 +1,10 @@
 import {
+  ensureYahooReady,
   fetchYahooChart,
   fetchYahooQuotes,
   normalizeYahooSymbol,
   readRegularMarketPrice,
+  resetYahooSessionCache,
 } from "./yahooFinance.js";
 
 const cache = new Map<string, { price: number; at: number }>();
@@ -22,6 +24,10 @@ let coalesceBatch: CoalesceBatch | null = null;
 let coalesceTimer: ReturnType<typeof setTimeout> | null = null;
 let flushChain: Promise<void> = Promise.resolve();
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function readCache(ticker: string): number | null {
   const hit = cache.get(ticker);
   if (!hit || Date.now() - hit.at >= TTL_MS) return null;
@@ -32,7 +38,7 @@ function writeCache(ticker: string, price: number): void {
   cache.set(ticker, { price, at: Date.now() });
 }
 
-async function fetchPricesFromNetwork(symbols: string[]): Promise<Record<string, number | null>> {
+async function fetchPricesFromNetworkOnce(symbols: string[]): Promise<Record<string, number | null>> {
   const out: Record<string, number | null> = {};
   for (const s of symbols) out[s] = null;
 
@@ -54,6 +60,30 @@ async function fetchPricesFromNetwork(symbols: string[]): Promise<Record<string,
   }
 
   return out;
+}
+
+function countResolved(symbols: string[], out: Record<string, number | null>): number {
+  return symbols.filter((s) => out[s] != null).length;
+}
+
+async function fetchPricesFromNetwork(symbols: string[]): Promise<Record<string, number | null>> {
+  await ensureYahooReady();
+
+  let last: Record<string, number | null> = {};
+  for (let pass = 0; pass < 2; pass++) {
+    if (pass > 0) {
+      resetYahooSessionCache();
+      await sleep(700);
+      await ensureYahooReady();
+    }
+    last = await fetchPricesFromNetworkOnce(symbols);
+    if (symbols.length === 0 || countResolved(symbols, last) > 0) {
+      return last;
+    }
+    console.warn(`Yahoo price batch returned no quotes (pass ${pass + 1}/2).`);
+  }
+
+  return last;
 }
 
 function hasPendingCoalesce(): boolean {

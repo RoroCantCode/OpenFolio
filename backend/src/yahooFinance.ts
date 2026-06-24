@@ -172,12 +172,17 @@ async function getYahooSession(): Promise<YahooSession> {
 /** Pre-warm Yahoo session (call on server start and periodically). */
 export async function warmYahooSession(): Promise<boolean> {
   try {
-    await withYahooLock(() => getYahooSession());
+    await ensureYahooReady();
     return true;
   } catch (e) {
     console.error("Yahoo session warm-up failed:", e);
     return false;
   }
+}
+
+/** Wait until a Yahoo cookie + crumb session is available (serialized). */
+export async function ensureYahooReady(): Promise<void> {
+  await withYahooLock(() => getYahooSession());
 }
 
 export function normalizeYahooSymbol(ticker: string): string {

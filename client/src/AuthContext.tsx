@@ -72,9 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionAction("login");
     setSessionBusy(true);
     try {
-      const { user: signedIn, token } = await postAuthLogin(email, password);
+      const { token } = await postAuthLogin(email, password);
       setAuthToken(token);
-      setUser(signedIn);
       const { user: verified } = await fetchAuthMe();
       if (!verified) {
         setAuthToken(null);
@@ -92,9 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSessionAction("register");
     setSessionBusy(true);
     try {
-      const { user: created, token } = await postAuthRegister(email, password, displayName);
+      const { token } = await postAuthRegister(email, password, displayName);
       setAuthToken(token);
-      setUser(created);
       const { user: verified } = await fetchAuthMe();
       if (!verified) {
         setAuthToken(null);

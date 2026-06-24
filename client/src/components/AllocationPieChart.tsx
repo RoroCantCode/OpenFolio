@@ -141,8 +141,9 @@ export function AllocationPieChart({ positions }: { positions: Position[] }) {
             nameKey="ticker"
             cx="50%"
             cy="50%"
-            outerRadius={96}
-            paddingAngle={1.5}
+            innerRadius={70}
+            outerRadius={110}
+            paddingAngle={2}
             label={renderSliceLabel}
             labelLine={{ stroke: "var(--muted)", strokeWidth: 1 }}
           >

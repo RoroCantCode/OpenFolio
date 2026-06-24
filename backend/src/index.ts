@@ -593,7 +593,8 @@ if (serveClient) {
 async function start(): Promise<void> {
   const db = await connectDb();
   registerAuthRoutes(app, db);
-  void warmYahooSession();
+  const warmed = await warmYahooSession();
+  console.log(warmed ? "Yahoo Finance session ready." : "Yahoo Finance warm-up failed; will retry on first quote request.");
   setInterval(() => void warmYahooSession(), 25 * 60 * 1000);
   app.listen(port, host, () => {
     const label = serveClient ? "OpenFolio (API + web UI)" : "OpenFolio API";
