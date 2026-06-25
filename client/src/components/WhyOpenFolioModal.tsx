@@ -67,14 +67,14 @@ export function WhyOpenFolioModal({ open, onClose }: { open: boolean; onClose: (
       <TrustSection title="Your data stays yours">
         Each account has a private ledger, watchlist, and analytics history stored in{" "}
         <strong style={{ color: "var(--text)", fontWeight: 600 }}>MongoDB Atlas</strong>, a managed database with
-        encryption in transit (TLS), automated backups, and strict per-user isolation. Your transactions are never
-        mixed with another user’s records.
+        encryption both in transit (TLS) and at rest (AES-256), automated backups, and strict per-user isolation.
+        Your transactions are never mixed with another user’s records.
       </TrustSection>
 
       <TrustSection title="Secure sign-in">
-        Passwords are hashed with <strong style={{ color: "var(--text)", fontWeight: 600 }}>bcrypt</strong> before
-        storage — we never save or display plain-text passwords. Sessions use signed tokens over HTTPS, and API
-        access is scoped to your account only.
+        Passwords are salted and hashed with <strong style={{ color: "var(--text)", fontWeight: 600 }}>bcrypt</strong>{" "}
+        before they ever reach the database — the plain-text password is never stored, logged, or displayed. Sessions
+        use signed tokens over HTTPS, and API access is scoped to your account only.
       </TrustSection>
 
       <TrustSection title="No hidden data brokering">

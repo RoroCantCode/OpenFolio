@@ -810,6 +810,9 @@ function AppShell() {
       ? "Checking session…"
       : "Loading your portfolio…";
   const headerActionsDisabled = !user || Boolean(user.needsDisplayName) || uiBlocked;
+  const marketDataUnavailable = Boolean(
+    portfolioReady && data && data.positions.some((p) => p.shares > 0) && portfolioMissingLivePrices(data)
+  );
 
   const homePageTitle = useMemo(() => {
     if (isDemo) return "Sample Investment Portfolio";
@@ -896,6 +899,14 @@ function AppShell() {
           />
 
           {error && <div className="banner-error">{error}</div>}
+
+          {!error && marketDataUnavailable && (
+            <div className="banner-warning" role="status">
+              Live market data is temporarily unavailable — Yahoo Finance isn’t responding right now.
+              Your holdings and history are unaffected; prices and current values will refresh automatically
+              once the feed recovers. Try the refresh button in a moment.
+            </div>
+          )}
 
           <main className="main-content">
             {isDemo && <DemoBanner />}
