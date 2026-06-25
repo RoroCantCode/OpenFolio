@@ -76,19 +76,17 @@ function Modal({
     <div
       role="dialog"
       aria-modal
-      className="app-modal-overlay"
+      className={"app-modal-overlay" + (allowBackdropClose ? "" : " app-modal-overlay-locked")}
       onMouseDown={(e) => {
         if (allowBackdropClose && e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="app-modal-panel">
+      <div className="app-modal-panel" onMouseDown={(e) => e.stopPropagation()}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ fontSize: 17, fontWeight: 650 }}>{title}</div>
-          {allowBackdropClose && (
-            <button type="button" className="btn-ghost" style={{ padding: "6px 10px" }} onClick={onClose}>
-              Close
-            </button>
-          )}
+          <button type="button" className="btn-ghost" style={{ padding: "6px 10px" }} onClick={onClose}>
+            Close
+          </button>
         </div>
         {children}
       </div>
@@ -509,6 +507,7 @@ export function UserAccountMenu() {
       {editProfileOpen && user && (
         <Modal
           title="Edit profile"
+          allowBackdropClose={false}
           onClose={() => {
             setEditProfileOpen(false);
             resetProfileForm();

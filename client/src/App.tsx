@@ -11,6 +11,7 @@ import { TransactionModal } from "./components/TransactionModal";
 import { WatchlistPanel } from "./components/WatchlistPanel";
 import { DemoBanner } from "./components/DemoBanner";
 import { SessionOverlay } from "./components/SessionOverlay";
+import { WelcomeOverlay } from "./components/WelcomeOverlay";
 import { WhyOpenFolioModal } from "./components/WhyOpenFolioModal";
 import { DEMO_PORTFOLIO, DEMO_TRANSACTIONS, DEMO_WATCHLIST } from "./demoPortfolio";
 import { CurrencyProvider, useCurrency } from "./CurrencyContext";
@@ -583,6 +584,7 @@ function AppShell() {
   const [importOpen, setImportOpen] = useState(false);
   const [chartOn, setChartOn] = useState<Record<string, boolean>>({});
   const [whyOpenFolioOpen, setWhyOpenFolioOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
   const loadGenerationRef = useRef(0);
   const prevUserIdRef = useRef<string | null>(null);
   const signedOutAtRef = useRef(0);
@@ -757,6 +759,15 @@ function AppShell() {
   ]);
 
   useEffect(() => {
+    if (authLoading || !authReady || sessionBusy) return;
+    if (!user) {
+      setWelcomeOpen(true);
+    } else {
+      setWelcomeOpen(false);
+    }
+  }, [authLoading, authReady, sessionBusy, user?.id]);
+
+  useEffect(() => {
     const positions = data?.positions;
     if (!positions?.length) {
       setChartOn({});
@@ -774,6 +785,7 @@ function AppShell() {
   const c = data?.capital;
   const positions = data?.positions ?? [];
   const isDemo = !user && authReady && !authLoading;
+  const showWelcome = isDemo && welcomeOpen && !sessionBusy;
   const portfolioReady = Boolean(
     (isDemo && data && tx !== null) ||
       (user && !user.needsDisplayName && data && tx !== null && loadedUserId === user.id)
@@ -781,6 +793,7 @@ function AppShell() {
   const uiBlocked =
     authLoading ||
     sessionBusy ||
+    showWelcome ||
     (Boolean(user) && !user?.needsDisplayName && (portfolioLoading || loadedUserId !== user?.id));
   const overlayMessage = sessionBusy
     ? sessionAction === "logout"
@@ -827,7 +840,8 @@ function AppShell() {
   return (
     <CurrencyProvider liveFx={data?.liveFxSgdPerUsd ?? null}>
       <CompleteProfileModal />
-      {uiBlocked && <SessionOverlay message={overlayMessage} />}
+      {uiBlocked && !showWelcome && <SessionOverlay message={overlayMessage} />}
+      {showWelcome && <WelcomeOverlay onDismiss={() => setWelcomeOpen(false)} />}
       <div className={"app-shell" + (uiBlocked ? " app-shell-blocked" : "")}>
         <aside className="sidebar" aria-label="Primary">
           <div className="sidebar-brand">
