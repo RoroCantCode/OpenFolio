@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AuthError, ProfileError } from "../api";
 import { useAuth } from "../AuthContext";
 
@@ -71,33 +72,16 @@ function Modal({
   onClose: () => void;
   allowBackdropClose?: boolean;
 }) {
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.55)",
-        display: "grid",
-        placeItems: "center",
-        zIndex: 80,
-        padding: 16,
-      }}
+      className="app-modal-overlay"
       onMouseDown={(e) => {
         if (allowBackdropClose && e.target === e.currentTarget) onClose();
       }}
     >
-      <div
-        style={{
-          width: "min(400px, 100%)",
-          background: "var(--bg1)",
-          border: "1px solid var(--stroke)",
-          borderRadius: 18,
-          padding: "1.25rem",
-          boxShadow: "var(--shadow)",
-        }}
-      >
+      <div className="app-modal-panel">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <div style={{ fontSize: 17, fontWeight: 650 }}>{title}</div>
           {allowBackdropClose && (
@@ -108,7 +92,8 @@ function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -228,13 +213,27 @@ export function UserAccountMenu() {
 
     const changingPassword =
       oldPassword.length > 0 || newPassword.length > 0 || confirmNewPassword.length > 0;
+    const nameChanged = name !== (user?.displayName ?? "").trim();
+
+    if (!changingPassword && !nameChanged) {
+      setFormErr("No changes to save.");
+      return;
+    }
 
     if (changingPassword) {
+      if (!oldPassword || !newPassword || !confirmNewPassword) {
+        setFormErr("Fill in all three password fields to change your password, or leave them blank to update your name only.");
+        return;
+      }
+      if (newPassword.length < 8) {
+        setFormErr("New password must be at least 8 characters.");
+        return;
+      }
       if (newPassword !== confirmNewPassword) {
         setFormErr("new passwords don't match");
         return;
       }
-      if (oldPassword && newPassword && oldPassword === newPassword) {
+      if (oldPassword === newPassword) {
         setFormErr("new password cannot be the same as the old one");
         return;
       }
@@ -243,7 +242,7 @@ export function UserAccountMenu() {
     setPending(true);
     try {
       await updateProfile({
-        displayName: name,
+        ...(nameChanged ? { displayName: name } : {}),
         ...(changingPassword
           ? {
               currentPassword: oldPassword,
@@ -535,6 +534,9 @@ export function UserAccountMenu() {
                 autoComplete="name"
               />
             </label>
+            <p style={{ margin: 0, fontSize: 12, color: "var(--muted)", lineHeight: 1.45 }}>
+              Leave the password fields blank to update your name only.
+            </p>
             <label style={{ display: "grid", gap: 6, fontSize: 13, color: "var(--muted)" }}>
               Old Password
               <HoverRevealPassword

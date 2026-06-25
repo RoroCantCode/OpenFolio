@@ -236,9 +236,15 @@ export function registerAuthRoutes(app: Express, db: Db): void {
 
     const pwFields = [currentPassword, newPassword, confirmNewPassword];
     const hasAnyPassword = pwFields.some((p) => (p ?? "").length > 0);
+    if (!hasAnyPassword && displayName === undefined) {
+      res.status(400).json({ error: "No changes to save." });
+      return;
+    }
     if (hasAnyPassword) {
       if (!currentPassword || !newPassword || !confirmNewPassword) {
-        res.status(400).json({ error: "Fill in all password fields to change your password." });
+        res.status(400).json({
+          error: "Fill in all three password fields to change your password, or leave them blank to update your name only.",
+        });
         return;
       }
       if (!bcrypt.compareSync(currentPassword, doc.password_hash)) {

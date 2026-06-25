@@ -193,6 +193,8 @@ function HomeView({
   chartOn,
   setChartOn,
   onWatchlistChanged,
+  showFirstTransactionHint = false,
+  onGoToLedger,
   readOnly = false,
 }: {
   c: CapitalOverview;
@@ -201,12 +203,23 @@ function HomeView({
   chartOn: Record<string, boolean>;
   setChartOn: Dispatch<SetStateAction<Record<string, boolean>>>;
   onWatchlistChanged: () => void;
+  showFirstTransactionHint?: boolean;
+  onGoToLedger?: () => void;
   readOnly?: boolean;
 }) {
   const { currency } = useCurrency();
 
   return (
     <>
+      {showFirstTransactionHint && (
+        <div className="onboarding-hint" role="status">
+          You don&apos;t have any transactions yet.{" "}
+          <button type="button" onClick={onGoToLedger}>
+            Go to Transaction ledger
+          </button>{" "}
+          to record your first stock trade.
+        </div>
+      )}
       <section>
         <h2 className="section-title">Key metrics</h2>
         <div
@@ -878,6 +891,8 @@ function AppShell() {
                 chartOn={chartOn}
                 setChartOn={setChartOn}
                 onWatchlistChanged={() => void loadWatchlistOnly()}
+                showFirstTransactionHint={!isDemo && tx.length === 0}
+                onGoToLedger={() => setPage("ledger")}
                 readOnly={isDemo}
               />
             )}

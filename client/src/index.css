@@ -198,6 +198,53 @@ button {
   background: rgba(255, 255, 255, 0.98);
 }
 
+.app-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.app-modal-panel {
+  width: min(400px, 100%);
+  background: var(--bg1);
+  border: 1px solid var(--stroke);
+  border-radius: 18px;
+  padding: 1.25rem;
+  box-shadow: var(--shadow);
+}
+
+.onboarding-hint {
+  margin-bottom: 20px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(94, 234, 212, 0.28);
+  background: rgba(94, 234, 212, 0.08);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.onboarding-hint button {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-weight: 650;
+  font-size: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+:root[data-theme="light"] .onboarding-hint {
+  border-color: rgba(13, 148, 136, 0.28);
+  background: rgba(13, 148, 136, 0.08);
+}
+
 .app-shell {
   display: flex;
   min-height: 100vh;
