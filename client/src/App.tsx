@@ -145,14 +145,12 @@ function MainHeader({
   pageTitle,
   kicker,
   onRefresh,
-  onNewTx,
   accountSlot,
   actionsDisabled,
 }: {
   pageTitle: string;
   kicker: string;
   onRefresh: () => void;
-  onNewTx: () => void;
   accountSlot?: ReactNode;
   actionsDisabled?: boolean;
 }) {
@@ -171,9 +169,6 @@ function MainHeader({
           onClick={() => void onRefresh()}
         >
           Refresh
-        </button>
-        <button type="button" className="btn-primary" disabled={actionsDisabled} onClick={onNewTx}>
-          New transaction
         </button>
         {accountSlot}
       </div>
@@ -312,13 +307,13 @@ function BreakdownView({ positions }: { positions: Position[] }) {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Name</th>
+              <th>Security Name</th>
               <th>Ticker</th>
               <th>Shares</th>
               <th>Weight</th>
-              <th>Avg cost ({currency})</th>
-              <th>Price ({currency})</th>
-              <th>Value ({currency})</th>
+              <th>Avg. Buy Price ({currency})</th>
+              <th>Current Price ({currency})</th>
+              <th>Value in Portfolio ({currency})</th>
               <th>XIRR</th>
               <th>Wtd XIRR</th>
             </tr>
@@ -351,15 +346,21 @@ function LedgerView({
   onDeleted,
   onEdit,
   onImportCsv,
+  onNewTx,
   readOnly = false,
 }: {
   transactions: TransactionRow[];
   onDeleted: () => void;
   onEdit: (row: TransactionRow) => void;
   onImportCsv: () => void;
+  onNewTx: () => void;
   readOnly?: boolean;
 }) {
   const { currency, fmtLedgerPrice, fmtLedgerFees } = useCurrency();
+  const fmtCapitalDeployed = (row: TransactionRow) => {
+    const totalUsd = row.price_usd * row.quantity;
+    return currency === "USD" ? fmtUsd(totalUsd, 2) : fmtSgd(totalUsd * row.fx_sgd_per_usd, 2);
+  };
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
 
@@ -368,7 +369,7 @@ function LedgerView({
     [transactions]
   );
 
-  const colCount = selectMode ? 10 : 10;
+  const colCount = selectMode ? 11 : readOnly ? 10 : 11;
   const allSelected = selectMode && sorted.length > 0 && sorted.every((t) => selected.has(t.id));
 
   const toggleSelectMode = () => {
@@ -408,7 +409,16 @@ function LedgerView({
 
   return (
     <section>
-      <h2 className="section-title">Transaction ledger</h2>
+      <div className="ledger-header">
+        <h2 className="section-title" style={{ margin: 0 }}>
+          Transaction ledger
+        </h2>
+        {!readOnly && (
+          <button type="button" className="btn-primary" onClick={onNewTx}>
+            New transaction
+          </button>
+        )}
+      </div>
       <div
         style={{
           display: "flex",
@@ -458,9 +468,10 @@ function LedgerView({
               <th>Date</th>
               <th>Side</th>
               <th>Ticker</th>
-              <th>Name</th>
+              <th>Security Name</th>
+              <th>Price per share ({currency})</th>
               <th>Qty</th>
-              <th>Price ({currency})</th>
+              <th>Total capital deployed ({currency})</th>
               <th>FX @ trade</th>
               <th>Fees ({currency})</th>
               <th>Notes</th>
@@ -471,7 +482,7 @@ function LedgerView({
             {sorted.length === 0 && (
               <tr>
                 <td colSpan={colCount} style={{ padding: "20px 14px", color: "var(--muted)" }}>
-                  No transactions yet. Use “New transaction” to add your first row.
+                  No transactions yet. Use &ldquo;New transaction&rdquo; above to add your first row.
                 </td>
               </tr>
             )}
@@ -493,8 +504,9 @@ function LedgerView({
                 <td style={{ textTransform: "capitalize" }}>{t.side}</td>
                 <td className="mono">{t.ticker}</td>
                 <td>{t.name ?? "—"}</td>
-                <td className="mono">{t.quantity}</td>
                 <td className="mono">{fmtLedgerPrice(t)}</td>
+                <td className="mono">{t.quantity}</td>
+                <td className="mono">{fmtCapitalDeployed(t)}</td>
                 <td className="mono">{Number(t.fx_sgd_per_usd).toFixed(4)}</td>
                 <td className="mono">{fmtLedgerFees(t, 2)}</td>
                 <td style={{ color: "var(--muted)", maxWidth: 320 }}>{t.notes ?? ""}</td>
@@ -893,7 +905,6 @@ function AppShell() {
             pageTitle={pageTitle}
             kicker={kicker}
             onRefresh={refreshPortfolio}
-            onNewTx={() => setModal(true)}
             accountSlot={<UserAccountMenu />}
             actionsDisabled={headerActionsDisabled}
           />
@@ -937,6 +948,7 @@ function AppShell() {
                 onDeleted={() => void load()}
                 onEdit={(row) => setEditTx(row)}
                 onImportCsv={() => setImportOpen(true)}
+                onNewTx={() => setModal(true)}
                 readOnly={isDemo}
               />
             )}

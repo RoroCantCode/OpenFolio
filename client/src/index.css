@@ -291,6 +291,14 @@ button {
   text-underline-offset: 3px;
 }
 
+.ledger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
 :root[data-theme="light"] .onboarding-hint {
   border-color: rgba(13, 148, 136, 0.28);
   background: rgba(13, 148, 136, 0.08);

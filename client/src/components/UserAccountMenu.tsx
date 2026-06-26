@@ -61,6 +61,33 @@ function IconMoon() {
   );
 }
 
+/**
+ * While any modal is open, make the rest of the app inert so underlying controls
+ * (e.g. the stat-card info buttons) can't be clicked or focused through the
+ * overlay. The modal is portaled to <body>, a sibling of #root, so locking #root
+ * leaves the modal itself fully interactive. Ref-counted to stay correct under
+ * StrictMode's double-mount and any overlapping modals.
+ */
+let modalBackgroundLocks = 0;
+
+function lockAppBackground(): void {
+  modalBackgroundLocks += 1;
+  if (modalBackgroundLocks > 1) return;
+  const root = document.getElementById("root");
+  if (!root) return;
+  root.setAttribute("inert", "");
+  root.style.pointerEvents = "none";
+}
+
+function unlockAppBackground(): void {
+  modalBackgroundLocks = Math.max(0, modalBackgroundLocks - 1);
+  if (modalBackgroundLocks > 0) return;
+  const root = document.getElementById("root");
+  if (!root) return;
+  root.removeAttribute("inert");
+  root.style.pointerEvents = "";
+}
+
 function Modal({
   title,
   children,
@@ -72,6 +99,11 @@ function Modal({
   onClose: () => void;
   allowBackdropClose?: boolean;
 }) {
+  useEffect(() => {
+    lockAppBackground();
+    return () => unlockAppBackground();
+  }, []);
+
   return createPortal(
     <div
       role="dialog"
