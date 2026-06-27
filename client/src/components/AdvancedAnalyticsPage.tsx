@@ -392,25 +392,13 @@ export function AdvancedAnalyticsPage() {
     <section>
       <div className="analytics-layout">
         <div className="analytics-main">
-          <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 10, lineHeight: 1.5, maxWidth: 720 }}>
-            Server-side Google Gemini reads your OpenFolio snapshot (same data as Home / Breakdown / Ledger). Not
-            financial advice. Requires <span className="mono">GEMINI_API_KEY</span>.
-            {modelPolicy ? (
-              <>
-                {" "}
-                <span className="mono" style={{ color: "var(--text)" }}>
-                  {modelPolicy}
-                </span>
-              </>
-            ) : null}
-          </p>
           <p
             style={{
               color: "var(--muted)",
               marginTop: 0,
-              marginBottom: 16,
+              marginBottom: 10,
               lineHeight: 1.5,
-              fontSize: 13,
+              fontSize: 15,
               maxWidth: 720,
             }}
           >
@@ -420,6 +408,19 @@ export function AdvancedAnalyticsPage() {
             surfaces adjacent quality and growth names you do not already hold. Use{" "}
             <strong style={{ color: "var(--text)" }}>Download report</strong> to save a PDF locally and store the text
             in your account.
+          </p>
+          <p style={{ color: "var(--muted)", marginTop: 0, marginBottom: 16, lineHeight: 1.5, fontSize: 13, maxWidth: 720 }}>
+            OpenFolio sends your portfolio snapshot to Google Gemini on our server to generate these reports
+            {modelPolicy ? (
+              <>
+                {" — "}
+                <span className="mono" style={{ color: "var(--text)" }}>
+                  {modelPolicy}
+                </span>
+              </>
+            ) : (
+              "."
+            )}
           </p>
 
           {staleReminder && (
